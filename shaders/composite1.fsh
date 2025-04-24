@@ -16,11 +16,18 @@ vec3 projectAndDivide(mat4 projectionMatrix, vec3 position){
 	return homPos.xyz / homPos.w;
 }
 
+bool sizeCheck(vec3 color) {
+	float avg = (color.r + color.g + color.b) / 3;
+	return avg <= 0.05;
+}
+
 /* RENDERTARGETS: 0 */
 layout(location = 0) out vec4 color;
 
 void main() {
 	color = texture(colortex0, texcoord);
+
+	if (sizeCheck(color.rgb)) return;
 
 	float depth = texture(depthtex0, texcoord).r;
 
@@ -31,17 +38,19 @@ void main() {
 	float len = length(viewPos);
 	float base = 0;
 	float wt = worldTime;
-	if (isNight) {
-		base = 1f-smoothstep(0, 200, wt-12785);
-	} else {
-		if (worldTime <= 23215) {
-			base = 1f-smoothstep(0, 200, wt-23215);
-		} else {
-			base = 1;
-		}
-	}
+//	if (isNight) {
+//		base = 1f-smoothstep(0, 200, wt-12785);
+//	} else {
+//		if (worldTime <= 23215) {
+//			base = 1f-smoothstep(0, 200, wt-23215);
+//		} else {
+//			base = 1;
+//		}
+//	}
 
 	float modifier = mix(smoothstep(0, 15, len-5), 0, base);
+
+	if (modifier == 0 || base == 1) return;
 
 	// Calculate the size of one pixel in texture coordinates (UV space)
 	vec2 texelSize = 1.0 / textureSize(colortex0, 0); // Gets size of mipmap level 0
@@ -51,8 +60,8 @@ void main() {
 	float kernelWeight = 0.0; // Keep track if using varying weights, for box blur it's just 1/N
 
 	// Sample a 11x11 grid around the current pixel
-	for (int x = -5; x <= 5; x++) {
-		for (int y = -5; y <= 5; y++) {
+	for (int x = -10; x <= 10; x++) {
+		for (int y = -10; y <= 10; y++) {
 			vec2 offset = vec2(float(x), float(y)) * texelSize;
 			blurredColor += texture(colortex0, texcoord + offset);
 			kernelWeight++;// For box blur, each sample has equal weight

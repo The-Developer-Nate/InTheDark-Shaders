@@ -1,6 +1,7 @@
 #version 330 compatibility
 
 uniform sampler2D colortex0;
+uniform sampler2D colortex1;
 uniform sampler2D depthtex0;
 uniform vec3 shadowLightPosition;
 uniform vec3 moonPosition;
@@ -16,8 +17,8 @@ vec3 projectAndDivide(mat4 projectionMatrix, vec3 position){
 }
 
 vec3 linear_fog(vec3 inColor, float vertexDistance, float fogEnd, vec3 fogColor) {
-    float brightness = 0.2989 * inColor.r + 0.5870 * inColor.g + 0.1140 * inColor.b;
-    float targetAttenuation = brightness/10; // 1% visibility at fog ending
+    float brightness = texture(colortex1, texcoord).r;//0.2989 * inColor.r + 0.5870 * inColor.g + 0.1140 * inColor.b;
+    float targetAttenuation = brightness/5; // 1% visibility at fog ending
     float cfogEnd = max(fogEnd, 0.0001);
     float density = -log(targetAttenuation) / cfogEnd;
     float factor = exp(-density * max(vertexDistance, 0.0));

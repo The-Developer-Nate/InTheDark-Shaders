@@ -1,5 +1,7 @@
 #version 330 compatibility
 
+#define SAMPLE_RADIUS 8
+
 uniform sampler2D colortex0;
 uniform sampler2D depthtex0;
 uniform vec3 shadowLightPosition;
@@ -18,7 +20,7 @@ vec3 projectAndDivide(mat4 projectionMatrix, vec3 position){
 
 bool sizeCheck(vec3 color) {
 	float avg = (color.r + color.g + color.b) / 3;
-	return avg <= 0.05;
+	return avg == 0;
 }
 
 /* RENDERTARGETS: 0 */
@@ -38,15 +40,15 @@ void main() {
 	float len = length(viewPos);
 	float base = 0;
 	float wt = worldTime;
-//	if (isNight) {
-//		base = 1f-smoothstep(0, 200, wt-12785);
-//	} else {
-//		if (worldTime <= 23215) {
-//			base = 1f-smoothstep(0, 200, wt-23215);
-//		} else {
-//			base = 1;
-//		}
-//	}
+	if (isNight) {
+		base = 1f-smoothstep(0, 200, wt-12785);
+	} else {
+		if (worldTime <= 23215) {
+			base = 1f-smoothstep(0, 200, wt-23215);
+		} else {
+			base = 1;
+		}
+	}
 
 	float modifier = mix(smoothstep(0, 15, len-5), 0, base);
 
@@ -60,10 +62,11 @@ void main() {
 	float kernelWeight = 0.0; // Keep track if using varying weights, for box blur it's just 1/N
 
 	// Sample a 11x11 grid around the current pixel
-	for (int x = -10; x <= 10; x++) {
-		for (int y = -10; y <= 10; y++) {
-			vec2 offset = vec2(float(x), float(y)) * texelSize;
-			blurredColor += texture(colortex0, texcoord + offset);
+	for (int x = -SAMPLE_RADIUS; x <= SAMPLE_RADIUS; x++) {
+		for (int y = -SAMPLE_RADIUS; y <= SAMPLE_RADIUS; y++) {
+			vec2 offset = vec2(float(x), float(y));
+			if (length(offset) > SAMPLE_RADIUS) continue;
+			blurredColor += texture(colortex0, texcoord + offset * texelSize);
 			kernelWeight++;// For box blur, each sample has equal weight
 		}
 	}
